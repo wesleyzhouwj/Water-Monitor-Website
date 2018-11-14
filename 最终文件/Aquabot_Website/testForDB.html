@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>菜鸟教程(runoob.com)</title>
+<script src="https://cdn.bootcss.com/jquery/1.10.2/jquery.min.js">
+</script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+                    function get(){
+                    $.ajax({
+                        url:'http://localhost:9090/admin/water_quality/getUserlist',
+                        type:'GET',
+                        dataType:'json',
+                        success:function(getMapData){
+                            for(var i=0;i<getMapData.length;i++){
+                                var lat = getMapData[i].u_lat;
+                                var lng = getMapData[i].u_lng;
+                                var latLng = new google.maps.LatLng(lat,lng);
+                                var mac = getMapData[i].u_mac;
+
+                                
+                                alert("lat");
+
+                            }
+                            
+                        },
+                        error:function(e){
+                            alert(e.status+''+e.statusText+''+'fullmap');
+                        }
+                    }); 
+                }
+   get();
+    
+//                        function post(mac){
+//                    $.ajax({
+//                        url:'http://localhost:9090/admin/water_quality/waterlist',
+//                        type:'POST',
+//                        data:{"mac":"dfefdfe-gegdf-cecx1"},
+////                        data:JSON.stringify({"mac":mac});
+//                        dataType:'json',
+//                        success:function(getMapData){
+//
+//                                
+//                                alert(getMapData.tds);
+//                            alert("hello");
+//
+//                            
+//                        },
+//                        error:function(e){
+//                            alert(e.status+''+e.statusText+''+'fullmap');
+//                        }
+//                    });
+//                }
+//    post();
+//    $.get("http://localhost:9090/admin/water_quality/getUserlistp", function(data){
+////  alert("Data Loaded: " + data.length);
+//        alert("hello");
+//});
+</script>
+</head>
+<body>
+
+<div><h2> AJAX 可以修改文本内容</h2></div>
+<button>修改内容</button>
+
+</body>
+</html>

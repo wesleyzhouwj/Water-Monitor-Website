@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Aquabot water monitor website</title>
+        <link rel="stylesheet" type="text/css" href="css/style.css">                        <!-- 引入css资源-->
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+    </head>
+    
+    <body>
+        <!--用户基本信息模块part1-->
+        <div class="userData">                                                  <!--用户基本信息 -->
+            <h4 align = center class="fontColor"><font size = "4">User Basic Information</font></h4>
+            <div id="userInfo">
+               <table class="userTable">
+                   <tr class="fontColor">
+                       <th>编号:</th>
+                       <td id="userCode"></td>                                  <!-- 通过改变它的innerHTML值将marker的信息传入 -->
+                   </tr>
+                   <tr class="fontColor">
+                       <th >姓名:</th>
+                       <td id="userName"></td>                                  <!-- 通过改变它的innerHTML值将marker的信息传入 -->
+                   </tr>
+                   <tr class="fontColor">
+                       <th>地址:</th>
+                       <td id="userAddress"></td>                               <!-- 通过改变它的innerHTML值将marker的信息传入 -->
+                   </tr>
+                   <tr class="fontColor">
+                       <th>电话:</th>
+                       <td id="userPhone"></td>                                 <!-- 通过改变它的innerHTML值将marker的信息传入 -->
+                   </tr>
+                </table>
+            </div>
+            
+            <!-- 用户图表信息画图-->
+            <div id="userChart">                                                            
+            <div id="container" style="width: 380px; height: 265px; margin: 0 auto"></div>   <!--定义用户信息图表在网页中的的布局 -->
+            <ul id="waterValue">                                                <!--使用无序列表展示水质其他信息，通过改变span这个内联元素的值显示不同marker的值 -->
+                <li class="fontColor">温度: <span id="tem"></span></li>
+                <li class="fontColor">单位PPM：<span id="ppm"></span></li>
+                <li class="fontColor">余氯：<span id="chlorine"></span></li>
+                <li class="fontColor">PH值：<span id="ph"></span></li>
+                <li class="fontColor">单位MV：<span id="mv"></span></li>
+            </ul>
+                
+                
+                <script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>   <!-- 引入jquery以及画图所需的api HighChart.js-->
+                 <script src="http://code.highcharts.com/highcharts.js"></script>
+                
+                <script>
+                    var chart;                                                         //定义一个全局变量chart，指向用户信息图表，方便后面函数调用
+                       function userChart(data) {                                      //使用HighChart.js的画图包，container为上面定义的图表的布局id名称
+                            chart = Highcharts.chart('container', {
+                                chart: {
+                                    zoomType: 'x',                                      //表示X轴是可以缩进的，如果放置的数据点较多，可以通过缩进来看局部数据
+                                    backgroundColor: 'rgba(0,0,0,0)'//用于去掉背景
+                                },
+                                credits:{
+                                  enabled:false  //c去除脚标                              //去除api自带的名称角标
+                                },
+                                title: {
+                                    text: 'User Water Quality Chart',
+                                    style:{
+                                        color:'white'
+                                    }
+
+                                },
+                                subtitle: {
+                                    text: document.ontouchstart === undefined ?
+                                            'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in'
+                                },
+                                xAxis: {
+                                    type: 'datetime',                                       //X周的数据类型是日期，可以使用DATE.UTC(2013,07,31)这样作为输入
+//                                    gridLineWidth:1,
+                                    labels:{
+                                        style:{
+                                            color:'white'
+                                        }
+                                    },
+                        
+                                },
+                                yAxis: {
+                                    title: {
+                                        text: 'User Water Quality',
+                                        style:{
+                                            color:'white'
+                                        }
+                                    },
+                                    max: 1,
+                                    min:-1,
+                                    tickInterval: 1,
+                                    gridLineDashStyle:'Dash',
+                                    labels:{
+                                        align:'center',
+//                                        x:0,
+////                                        y:-1,
+                                        style:{
+                                            color:'white'
+                                        }
+                                    }
+                                },
+                                legend: {
+                                    enabled: false
+                                },
+                                plotOptions: {
+
+                                },
+
+                                series: [{
+                                    name: 'User Water Quality',                 
+                                    color:'#87CEFA',
+                                    data: data,                                                 //要显示的数据，也是后面需要更新的地方，也是函数传入的东西
+                                    
+                                }]
+
+                            });
+                        }
+                    
+
+
+                        
+                    userChart();                                                                //在还没有数据传入的时候，即刚开启网页的时候，先生成一个空表，函数传入的data为空
+                </script>
+            </div>
+        </div>
+        
+        <!--地图模块part2-->
+        <div class="mapView">                                                                 <!--布局主界面在网站中的位置 -->
+            <div id="mapBtn">                                                                 <!-- 布局good，bad按钮在主界面中的位置-->
+                <button class="btnGood" onclick="showGoodMarker()">Good</button>              <!--定义good，bad按钮，并指定点击后的相应事件函数-->
+                <button class="btnBad" onclick="showBadMarker()">Bad</button>
+                <script>
+                    //marker数组定义在下面的script标签中
+                     var countBadClick = 0;                                                 //用于实现点击再点击还原，点击一次good按钮，地图只显示好的marker再点击就还原初始状态
+                     //显示不好的点
+                     function showBadMarker(){
+                         if(countBadClick == 0){                 //如果是第一次点击bad按钮，让次数+1，然后对于保存所有marker对象的数组遍历，判断marker所代表的水质是坏，则将好的通过setMap（null），不显示在地图上
+                             countBadClick++;
+                            for(var i=0;i<markerCount.length;i++){
+                                if(markerCount[i].status==1){
+                                    markerCount[i].setMap(null);
+                                }
+                            }
+                         }else{                                  //如果countBadClick不是0，则表示已经点击过了，则使用setMap指定marker到相应的地图上
+                             countBadClick = 0;
+                             for(var i=0;i<markerCount.length;i++){
+                                if(markerCount[i].id==1){
+                                    markerCount[i].setMap(map);
+                                }
+                             }
+                         }
+                     }
+                    
+                     var countGoodClick = 0;
+                     //显示好的点
+                    function showGoodMarker(){                                      //good按钮的逻辑跟上面bad按钮一模一样，参考上面
+                         if(countGoodClick == 0){
+                             countGoodClick++;
+                            for(var i=0;i<markerCount.length;i++){
+                                if(markerCount[i].id==2){
+                                    markerCount[i].setMap(null);
+                                }
+                            }
+                         }else{
+                             countGoodClick = 0;
+                             for(var i=0;i<markerCount.length;i++){
+                                if(markerCount[i].id==2){
+                                    markerCount[i].setMap(map);
+                                }
+                             }
+                         }
+                     }
+                    
+                    
+                </script>   
+            </div>
+            
+        
+            <div id="mapChart">                 <!--定义主地图在网页中的位置-->
+                
+            <script>
+            var markerCount = [];                   //用于good，bad按钮的存有所有marker对象的数组
+            var map;                              //定义主地图的变量map
+            var map1;                            //定义热像图的map1
+            var heatmap;                        //定义用于热像图的变量
+            var badPoints = [];                 //用于热像图存入水质为坏的marker
+                
+                
+            function initMap(){                 //初始化地图，与下面google map api key相对应，作为回调函数生成地图
+                map = new google.maps.Map(document.getElementById('mapChart'),{      //map对应的是主地图
+                    zoom:10,
+//                    center:new google.maps.LatLng(19.4104996,-155.2738342),
+                    center:new google.maps.LatLng(24.605,110.20),
+                   styles: getMainMapStyle()                  //指向下面的地图style函数，使得地图的style进行改变
+                });
+                
+                //加载第二个图表
+                map1 = new google.maps.Map(document.getElementById('statChart3'),{              //map1对应的是热像图的地图
+                    zoom:5,
+//                    center:{lat:37.775, lng: -122.434},
+                    center:{lat:24.605, lng: 110.20},
+                    mapTypeControlOptions: {
+                        mapStypeId:'styled_map'
+                    }
+                });
+                
+                map1.mapTypes.set('styled_map',getStyle());                       //设置热像图的地图style
+                map1.setMapTypeId('styled_map');
+                
+                heatmap = new google.maps.visualization.HeatmapLayer({
+                    map: map1                                                   //添加热像图层，上面只是生成不同style的地图，这个是加热像图层，这样地图上才有一圈圈的红色，绿色热成像
+                });
+            
+            
+            }
+
+                var markers = [];                       //markers数组用于infoWindow，记录从ajax获取的所有marker
+                
+                function fullMap(){                                 //用于从ajax获取数据，并在主地图上生成marker
+                    $.ajax({                                                    //使用ajax（jquery包装的），通过get方法获取数据，如果格式是jsonp的话，需要添加回调函数在返回的json数据前面
+                        url:'http://120.79.75.202:9090/app/searchAllUser',
+                        type:'GET',
+                        dataType:'jsonp',
+                        jsonpCallback:'callbackAllUser',                               //指定对应的回调函数名称
+                        success:function(getMapData){
+                            alert(getMapData[0].lat);
+                            for(var i=0;i<markers.length;i++){                  //每次更新时，通过ajax获取数据成功，均通过setMap（null）将地图上所有marker清空
+                                markers[i].setMap(null);
+                            }
+                            markers = [];                                    //清空marker数据，目的是更新新的marker到地图上，因为不能指定更新某一个变化的marker，所有干脆一次性全部清空，重新在地图上添加marker
+                            for(var i=0;i<getMapData.length;i++){            //对于获取到的json数据，获取其中需要的信息
+                                var lat = getMapData[i].lat;
+                                var lng = getMapData[i].lng;
+                                var latLng = new google.maps.LatLng(lat,lng);
+                                var mac = getMapData[i].mac;
+                                var id = getMapData[i].id;
+                                var status = getMapData[i].status;
+                                var cl = getMapData[i].cl;
+                                var orp = getMapData[i].orp;
+                                var ph = getMapData[i].ph;
+                                var temperature = getMapData[i].temperature;
+                                
+                                
+                                
+                                icon = selectIcon(i,getMapData);             //因为要显示水质好与不好的用户图表，所以调用下面的selectIcon函数，得到不同水质相对应的图表
+                                
+                                
+                                var marker = new google.maps.Marker({        //为每一个marker添加所需要的信息
+                                    position:latLng,
+                                    //map: map,
+                                    icon:icon,
+                                    mac:mac,
+                                    id:id,
+                                    status:status,
+                                    cl:cl,
+                                    orp:orp,
+                                    ph:ph
+                                });
+                                markers.push(marker);                           //将marker添加到markers数组中
+                                markerCount.push(marker);                       //将marker添加进数组中，对于上面的按good，bad钮进行使用
+                                showInfoWindow(marker,mac,getMapData);          //调用信息窗口函数showInfoWindow
+                                
+
+
+                            }
+
+                            for(var i=0;i<markers.length;i++){                  //对于所有markers数组中的marker对象，它代表所有用户，所以这一步为每一个marker指定地图通过setMap（map）将其添加到主地图上
+                                markers[i].setMap(map);
+                            }
+                        },
+                        error:function(e){                                      //如果ajax请求出现问题，alert错误状态码
+                            alert(e.status+''+e.statusText+''+'fullmap');
+                        }
+                    });
+                }
+                
+            
+            //根据需求选择不同的marker图表
+            function selectIcon(number,results){                                          //用于选取不同水质对应的图标，自己添加想用的图标
+                var iconBaseRed = 'http://labs.google.com/ridefinder/images/mm_20_green.png';
+                //var iconBase = 'ph.jpg';                                                //可以尝试添加本地图片，但是要自己注意图片大小，方式如这个注释里的代码
+                if(results[number].status == 0){
+                     return iconBaseRed ;
+                }else if(results[number].status == 2){
+                    return 'http://labs.google.com/ridefinder/images/mm_20_red.png';
+                }
+            }
+                
+
+            function showInfoWindow(marker,mac,results){                                   //是上面调用的函数，用于为每个marker添加相应的响应事件，比如点击某一个marker之后做出的反应
+                $.ajax({                                                                   //函数出进来mac作为marker的标识，marker为你需要添加事件的marker，results上面ajax获取到的json数据
+                    url:'http://120.79.75.202:9090/app/getUserInfo',
+                    type:"POST",                                                           //使用ajax的post方法传入相应的marker 的mac信息，获取后端对应的marker详细信息，格式是json
+                    data:{"mac":mac},
+                    dataType:'json',
+                    success:function(info1){                                                //获取成功，info1为获取到的json数据
+                        alert(info1);
+                        var message = info1.address;
+                        var infowindow = new google.maps.InfoWindow({                      //添加信息窗口，参考google map 的信息窗口，这个功能是你把鼠标停留在marker上显示的信息窗口
+                            content:message,
+                            size: new google.maps.Size(100,100)
+                        });
+                        marker.addListener('mouseover',function(){                          //添加事件响应的方式，mouseover为鼠标停留在marker上，则打开信息窗口
+                            infowindow.open(map,marker);
+                        });
+                
+                        marker.addListener('mouseout',function(){                           //添加事件响应方式，mouseout为鼠标移出marker范围，则关闭信息窗口
+                            infowindow.close();
+                        });
+                        
+                        marker.addListener('click',function(){                              //添加事件响应方式，click为鼠标点击marker事对应的事件
+                            
+                            if(document.getElementById("userCode").innerHTML!=marker.id){      //这一步为文档中判断marker是否一直跳跃，方法是判断当前点击获得的usercode值是否跟当前用户基本信息中usercode对应的值相同，不同表示点击了其他marker，相同表示点击同一个marker，当然你可以使用mac地址或者address任何你想用的值作为判断，usercode只是我随便选取的
+                                for (var i = 0; i < markers.length; i++) {
+                                    markers[i].setAnimation(null);
+                                }
+                            }
+                            
+                            document.getElementById("userCode").innerHTML = marker.id;           //根据ajax post获得的数据，更新用户基本信息值
+                            document.getElementById("userName").innerHTML = marker.mac;
+                            document.getElementById("userAddress").innerHTML = info1.address;
+                            document.getElementById("userPhone").innerHTML = new Date(marker.createtime);
+                    
+                    
+                            
+                            var arrUser = new Array();
+                            for(var i=0;i<info1.data.length;i++){
+                                var waterquality = 0;
+                                if(info1.data[i].status == 1){
+                                    waterquality = 1;
+                                }else{
+                                    waterquality = -1;
+                                }
+                                arrUser.push(new Array(parseInt(info1.data[i].screateTime),Math.abs(waterquality)));
+                            }
+                        chart.update({                                                             //根据ajax post获得的数据更新用户信息图表的数据点，chart.update是highchart.js的对于图表的更新方法
+                            series: [{
+                                type: 'column',
+                                name: 'User Water Quality',
+//                                data: [[Date.UTC(2008, 0, 1),-1],[Date.UTC(2009, 0, 2),1],[Date.UTC(2007, 0, 3),1],[Date.UTC(2007, 0, 4),-1],[Date.UTC(2007, 0, 5),1],[Date.UTC(2007, 0, 28),-1],[Date.UTC(2007, 0, 29),1],[Date.UTC(2007, 0, 30),1]]
+                                data:arrUser
+                                }]
+                                
+                        });
+                    
+                        document.getElementById("tem").innerHTML = info1.temperature;                        //通过innerHTML改变用户信息图表下面水质不同参数的值
+                        document.getElementById("ppm").innerHTML = info1.tds;
+                        document.getElementById("chlorine").innerHTML = info1.cl;
+                        document.getElementById("ph").innerHTML = info1.ph;
+                        document.getElementById("mv").innerHTML = info1.orp;
+                            
+                        if (marker.getAnimation() !== null) {                                              //用于判断当再次点击同一个marker的时候，让其不再跳跃，再点击，再次跳跃
+                          marker.setAnimation(null);
+                        } else {
+                          marker.setAnimation(google.maps.Animation.BOUNCE);
+                        }
+                            
+                            
+                            
+                        });
+                        
+                    },   
+                    error(e){                                                                               //如果ajax出现错误，alert错误
+                        alert(e.status+''+e.statusText+''+'postData');
+                    }
+                });
+            }
+                
+                
+                function getMainMapStyle(){                                                              //用于定义主地图的style，比如地图上水是什么颜色，路什么颜色，等等
+                    return [
+                        {elementType: 'geometry', stylers: [{color: '#242f3e'}]},
+                        {elementType: 'labels.text.stroke', stylers: [{color: '#1a3646'}]},
+                        {elementType: 'labels.text.fill', stylers: [{color: '#8ec3b9'}]},
+                        {
+                          featureType: 'administrative.locality',
+                          elementType: 'labels.text.fill',
+                          stylers: [{color: '#d59563'}]
+                        },
+                        {
+                          featureType: 'poi',
+                          elementType: 'labels.text.fill',
+                          stylers: [{color: '#6f9ba5'}]
+                        },
+                        {
+                          featureType: 'poi.park',
+                          elementType: 'geometry.fill',
+                          stylers: [{color: '#023e58'}]
+                        },
+                        {
+                          featureType: 'poi.park',
+                          elementType: 'labels.text.fill',
+                          stylers: [{color: '#3C7680'}]
+                        },
+                        {
+                          featureType: 'road',
+                          elementType: 'geometry',
+                          stylers: [{color: '#38414e'}]
+                        },
+                        {
+                          featureType: 'road',
+                          elementType: 'geometry.stroke',
+                          stylers: [{color: '#212a37'}]
+                        },
+                        {
+                          featureType: 'road',
+                          elementType: 'labels.text.fill',
+                          stylers: [{color: '#98a5be'}]
+                        },
+                        {
+                          featureType: 'road.highway',
+                          elementType: 'geometry',
+                          stylers: [{color: '#746855'}]
+                        },
+                        {
+                          featureType: 'road.highway',
+                          elementType: 'geometry.stroke',
+                          stylers: [{color: '#1f2835'}]
+                        },
+                        {
+                          featureType: 'road.highway',
+                          elementType: 'labels.text.fill',
+                          stylers: [{color: '#f3d19c'}]
+                        },
+                        {
+                          featureType: 'transit',
+                          elementType: 'geometry',
+                          stylers: [{color: '#2f3948'}]
+                        },
+                        {
+                          featureType: 'transit.station',
+                          elementType: 'labels.text.fill',
+                          stylers: [{color: '#d59563'}]
+                        },
+                        {
+                          featureType: 'water',
+                          elementType: 'geometry',
+                          stylers: [{color: '#17263c'}]
+                        },
+                        {
+                          featureType: 'water',
+                          elementType: 'labels.text.fill',
+                          stylers: [{color: '#515c6d'}]
+                        },
+                        {
+                          featureType: 'water',
+                          elementType: 'labels.text.stroke',
+                          stylers: [{color: '#17263c'}]
+                        }
+                      ];
+                }
+                
+
+//            self.setInterval("fullMap()",6000);                     //通过setinterval的方式调用fullmap生成数据上的点，设置调用函数的时间，从而实现实时更新，比如后端没3小时获取一次数据，那这次可以设置每3小时调用一次函数重新生成地图上的点
+                fullMap();
+
+            </script>                                            <!--用于调用google map api其中包含google map key以及热像图所需的visiualization库，最后调用回调函数initMap生成地图，这里因为生成2个地图不能使用async，必须使用defer-->
+                 <script defer 
+                    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlpSzqx999357qCKZ2ne9bMORF6T9BgiI&libraries=visualization&callback=initMap">
+                </script> 
+            </div>
+            
+            
+            <div id="mapList">
+                <button onclick="count()" class="block">Click to show the user list with bad water quality</button>              <!--添加badlist按钮-->
+                <a class="fontColor">Total number:&nbsp;&nbsp;&nbsp;<span id="totalNum">&nbsp;&nbsp;&nbsp;</span></a>&nbsp;&nbsp;&nbsp;
+                    <a href="javascript:void(0);" download="data.csv" id="downloadBadList" class="fontColor"></a>
+                <div class="badTable"><table id="table_area" border="1" ></table></div>                                        <!--定义badlist表格的位置-->
+                
+                <srcipt src ="http://code.jquery.com/jquery-1.4.1.min.js"></srcipt>                                    <!--引用jquery-->
+                <script>
+                    var countTimes = 0;                                                                 //记录button点击次数                
+                    var info = new Array();                                                             //全局变量，必须放在外面，用于badlist表格存储信息
+                    var downloadInfo = "numberCount"+","+"ID"+","+"Address"+","+"Lat"+"Lng"+"Mac"+"\n";  //用于下载badlist时候的excel文件的标题
+                    var badMac = new Array();
+                    
+                    var badlist = function(){                                        
+                        var numberCount = 1;
+                        info = [];
+                        downloadInfo = "numberCount"+","+"ID"+","+"Address"+","+"Lat"+","+"Lng"+","+"Mac"+"\n";
+                        $.ajax({
+                            url:'http://120.79.75.202:9090/app/searchAllUser',
+                            type:'GET',
+                            dataType:'jsonp',
+                            jsonpCallback:'callbackAllUser',
+                            success:function(data){
+                                info.push({number:"#",userID:"userID",Address:"Address", Lat:"Lat",Lng:"Lng",Mac:"Mac"});            //为badlist表格添加表头
+                                for(var i=0;i<data.length;i++){
+                                    if(data[i].status == 2){                                                          //判断当前的用户水质好坏与否
+                                        var badmac = data[i].mac;                                               //如果是坏，定义badmac变量记录mac地址
+//                                        $.ajax({
+//                                            url:'http://120.79.75.202:9090/app/getUserInfo',
+//                                            type:"POST",
+//                                            data:{"mac":badmac},                                                 //将上面定义的mac地址作为post参数传回后端，获取相应的用户信息
+//                                            dataType:'json',
+//                                            async : false,                                            //这个地方async要取消不然跟前面get会冲突，要注意，因为这个参数默认的是采取异步的方式，所以这里要取消
+//                                            success:function(info1){
+//                                                var userName = info1.id;
+//                                                var userAddress = info1.address;
+//                                                var userCode = info1.createTime;
+//                                                var user = {number:numberCount,userID:info1.id,Address:info1.address,Lat:info1.lat, Lng:info1.lng,Mac:info1.mac};//设置一个user对象存储所有单一用户的信息
+//                                                info.push(user);                                       //将user存入info中，用于后面表格的生成
+////                                                downloadInfo += numberCount+","+userName.replace(/,/g, "")+","+userAddress+","+userCode+"\n";
+//                                                downloadInfo += numberCount+","+info1.id+","+userAddress+","+info1.lat+","+info1.lng+","+info1.mac+"\n";    //添加下载表格的信息\n用于换行，在excel中“，”会让它换一列
+//                                                numberCount++;                    //记录当前有多少个水质为差的用户数量
+//                                            },
+//                                            error(e){
+//                                                alert("post");
+//                                            }
+//                                        });
+                                                var userName = data.id;
+                                                var userAddress = data.address;
+                                                var userCode = data.createTime;
+                                                var user = {number:numberCount,userID:data[i].id,Address:data[i].address,Lat:data[i].lat, Lng:data[i].lng,Mac:data[i].mac};//设置一个user对象存储所有单一用户的信息
+                                                info.push(user);                                       //将user存入info中，用于后面表格的生成
+//                                                downloadInfo += numberCount+","+userName.replace(/,/g, "")+","+userAddress+","+userCode+"\n";
+                                                downloadInfo += numberCount+","+data[i].id+","+userAddress+","+data[i].lat+","+data[i].lng+","+data[i].mac+"\n";    //添加下载表格的信息\n用于换行，在excel中“，”会让它换一列
+                                                numberCount++;                    //记录当前有多少个水质为差的用户数量
+                                        
+                                    }
+                                }
+                                document.getElementById("totalNum").innerHTML =  numberCount-1;                                     //显示badlist总数，-1因为初始值设置是1
+                                display_table();
+                            },
+                            error:function(e){
+                                alert(e.status+''+e.statusText+''+'get');
+                            }
+                        });
+                    }
+
+                    
+                    function create_tr_e(a){                                                     //创建Html中的tabe元素里的tr,td
+                        var tr_e = document.createElement("tr");
+                        var  td_e = document.createElement("td"); td_e.appendChild(document.createTextNode(a["number"])); tr_e.appendChild(td_e);
+                        td_e = document.createElement("td"); td_e.appendChild(document.createTextNode(a["userID"])); tr_e.appendChild(td_e);
+                        td_e = document.createElement("td"); td_e.appendChild(document.createTextNode(a["Address"])); tr_e.appendChild(td_e);
+                        td_e = document.createElement("td"); td_e.appendChild(document.createTextNode(a["Lat"])); tr_e.appendChild(td_e);
+                        td_e = document.createElement("td"); td_e.appendChild(document.createTextNode(a["Lng"])); tr_e.appendChild(td_e);
+                        td_e = document.createElement("td"); td_e.appendChild(document.createTextNode(a["Mac"])); tr_e.appendChild(td_e);
+                        return tr_e;
+                    }
+                    
+                    function display_table(){                                      //dom树的操作，添加子节点
+                        var table_e = document.getElementById("table_area");
+                        for(var i = 0;i<info.length;i++){
+
+                            table_e.appendChild(create_tr_e(info[i]));
+                        }
+                        //alert(table_e.childNodes[1].innerHTML);
+                    }
+                    
+                    function count(){                                    //仿照上面bad,good按钮再次点击不显示表格
+                        if(countTimes == 0){
+                            countTimes++;
+                            badlist();
+                            document.getElementById("downloadBadList").innerHTML = "download";
+                        }else{
+                            countTimes--;
+                                var list = document.getElementById("table_area");
+                                while(list.hasChildNodes()){
+                                    list.removeChild(list.firstChild);
+                                }
+                            document.getElementById("downloadBadList").innerHTML =null;
+                            document.getElementById("totalNum").innerHTML = null;
+                        }
+//                        document.getElementById("totalNum").innerHTML = null;
+                    }
+                    
+//                    function download(node){
+                        document.getElementById('downloadBadList').addEventListener('click',function(e) {         //用于显示下载按钮，当点击badlist按钮时候才显示download，不然不显示
+                          console.log(e)
+                          var csvData =downloadInfo;
+                          csvData = 'data:application/csv;charset=utf-8,' + csvData;
+//                            csvData = 'data:application/txt;charset=utf-8,' + csvData;
+                          this.setAttribute('href',csvData);
+                          this.setAttribute('target','_blank');
+                        },false);
+//                    }
+
+                </script>
+            </div>
+            
+        </div>
+        
+        <!--统计数据模块part3-->
+        <div class="statData">                                                                    
+            <h6 align = center class="fontColor"><font size = "2"> Statistic Data</font></h6>
+            <div id="statChart1">
+                <canvas id="statChart11" ></canvas>                                            <!--定义画图函数chart.js-->
+                <script src="Chart.js"></script>
+                    <script>
+                        var myChart;
+                        function versus(){
+                            var ctx = document.getElementById("statChart11");
+                            myChart = new Chart(ctx, {
+                                type: 'pie',
+                                data: {
+                                    labels: ["Good", "Bad"],
+                                    datasets: [{
+                                        data: [10,10],
+                                        borderColor:"blue",
+                                        //hoverBackgroundColor:"red",
+                                        backgroundColor:["#6495ED","#9932CC"],
+                                        borderWidth:1,
+
+                                    }]
+                                },
+                                options: {
+                                    layout:{
+                                        padding:{
+                                            top:0,
+                                            bottom:60,
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        versus();                                               //用于网页没加载数据时候，先放置一个空的图表
+                        
+                        function versusChart(){
+                            $.ajax({
+                                url:'http://120.79.75.202:9090/app/getLatestStatusCV',
+                                type:'GET',
+                                dataType:'jsonp',
+                                jsonpCallback:'callbacklatestCV',
+                                success:function(data2){
+                                    var goodCount = data2.data[0].goodCount;
+                                    var badCount = data2.data[0].badCount;
+                                        myChart.data.datasets[0].data = [goodCount,badCount];          //通过ajax更新图表信息
+                                        myChart.update();
+                                        //seasonalChart();//等pie图画完再画下一个图
+                                },
+                                error:function(e){
+                                    alert(e.status+''+e.statusText+''+'pie chart');
+                                   
+                                }
+                            });
+                        }
+//                       versusChart();
+                        setInterval("versusChart()",5000);                                //用于实时更新图表，跟上面的思路一样
+                    </script>
+            </div>
+            
+            <div id="statChart2">
+                <canvas id="statChart22"></canvas>
+                    <script src="Chart.js"></script>
+                    <script>
+                        var chart1;
+                        function statisticChart2(data) {                            //调用highchart画图
+                           chart1 =  Highcharts.chart('statChart2', {
+                                chart: {
+                                    zoomType: 'x',
+                                    backgroundColor: 'rgba(0,0,0,0)'//用于去掉背景
+                                },
+                                credits:{
+                                  enabled:false  //c去除脚标
+                                },
+                                title: {
+                                    text: 'Seasonal Statistic Data'
+
+                                },
+//                                subtitle: {
+//                                    text: document.ontouchstart === undefined ?
+//                                            'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in'
+//                                },
+                                xAxis: {
+                                    type: 'datetime',
+                                    gridLineWidth:1,
+                                    labels:{
+                                        style:{
+                                            color:'white'
+                                        }
+                                    }
+                                },
+                                yAxis: {
+                                    title: {
+                                        text: 'Water Quality',
+                                        style:{
+                                            color:'white'
+                                        }
+                                    },
+                                    gridLineDashStyle:'Dash',
+                                    labels:{
+                                        align:'center',
+                                        x:0,
+                                        y:-1,
+                                        style:{
+                                            color:'white'
+                                        }
+                                    }
+                                },
+                                legend: {
+                                    enabled: false
+                                },
+                                plotOptions: {
+                                    area: {
+                                        fillColor: {
+                                            linearGradient: {
+                                                x1: 0,
+                                                y1: 0,
+                                                x2: 0,
+                                                y2: 1
+                                            },
+                                            stops: [
+                                                [0, Highcharts.getOptions().colors[0]],
+                                                [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                                            ]
+                                        },
+                                        marker: {
+                                            radius: 2
+                                        },
+                                        lineWidth: 1,
+                                        states: {
+                                            hover: {
+                                                lineWidth: 1
+                                            }
+                                        },
+                                        threshold: null
+                                    }
+                                },
+
+                                series: [{
+                                    type: 'area',
+                                    name: 'User Water Quality',
+                                    color:'#87CEEB',
+                                    data: data
+                                }]
+
+                            });
+                        }
+                        
+                        statisticChart2();                                //用于函数还没加载出来的时候，放置一个空的图表
+                        
+                        function seasonalChart(){
+                                $.ajax({
+                                url:'http://120.79.75.202:9090/app/historyCV',
+                                type:'GET',
+                                dataType:'jsonp',
+                                jsonpCallback:'callbackpie',
+                                success:function(data1){
+                                  
+//                                    var Info = [[1167609600000,0.7537+1 *0.1],[1167955200001,0.7559+2 *0.1],[1167955200000,0.7644+3 *0.1],[1171238400000,0.7719+4*0.01],[1173744000000,0.7566+5*0.01]];
+//                                  
+//                          
+                                    var Info = new Array();
+                                    for(var i=0;i<data1.length;i++){
+                                        Info.push(new Array(parseInt(data1[i].createTime),Math.abs(data1[i].statusCV)));
+                                    }
+                                    
+//                                    alert(Info);
+                                    chart1.update({                           //更新图表，在每次ajax获取数据成功的时候
+                                        series: [{
+                                            type: 'area',
+                                            name: 'hi',
+                                            data: Info
+                                        }]
+                                    });
+                                }, 
+                                error:function(e){
+                                    alert(e.status+''+e.statusText+''+'seasonal statistic data');
+                                }
+                            });
+                        }
+//                        seasonalChart();
+                        self.setInterval("seasonalChart()",5000);                  //实时更新
+                        
+
+                    </script>
+            </div>
+            <div id="statChart3">
+                <script>
+                    function getStyle(){                                           //用于热像图的style，跟上面主地图的一样，只是色彩选择不同
+                        return   new google.maps.StyledMapType(
+                        [
+                          {elementType: 'geometry', stylers: [{color: '#ebe3cd'}]},
+                          {elementType: 'labels.text.fill', stylers: [{color: '#523735'}]},
+                          {elementType: 'labels.text.stroke', stylers: [{color: '#f5f1e6'}]},
+                          {
+                            featureType: 'administrative',
+                            elementType: 'geometry.stroke',
+                            stylers: [{color: '#c9b2a6'}]
+                          },
+                          {
+                            featureType: 'administrative.land_parcel',
+                            elementType: 'geometry.stroke',
+                            stylers: [{color: '#dcd2be'}]
+                          },
+                          {
+                            featureType: 'administrative.land_parcel',
+                            elementType: 'labels.text.fill',
+                            stylers: [{color: '#ae9e90'}]
+                          },
+                          {
+                            featureType: 'landscape.natural',
+                            elementType: 'geometry',
+                            stylers: [{color: '#dfd2ae'}]
+                          },
+                          {
+                            featureType: 'poi',
+                            elementType: 'geometry',
+                            stylers: [{color: '#dfd2ae'}]
+                          },
+                          {
+                            featureType: 'poi',
+                            elementType: 'labels.text.fill',
+                            stylers: [{color: '#93817c'}]
+                          },
+                          {
+                            featureType: 'poi.park',
+                            elementType: 'geometry.fill',
+                            stylers: [{color: '#a5b076'}]
+                          },
+                          {
+                            featureType: 'poi.park',
+                            elementType: 'labels.text.fill',
+                            stylers: [{color: '#447530'}]
+                          },
+                          {
+                            featureType: 'road',
+                            elementType: 'geometry',
+                            stylers: [{color: '#f5f1e6'}]
+                          },
+                          {
+                            featureType: 'road.arterial',
+                            elementType: 'geometry',
+                            stylers: [{color: '#fdfcf8'}]
+                          },
+                          {
+                            featureType: 'road.highway',
+                            elementType: 'geometry',
+                            stylers: [{color: '#f8c967'}]
+                          },
+                          {
+                            featureType: 'road.highway',
+                            elementType: 'geometry.stroke',
+                            stylers: [{color: '#e9bc62'}]
+                          },
+                          {
+                            featureType: 'road.highway.controlled_access',
+                            elementType: 'geometry',
+                            stylers: [{color: '#e98d58'}]
+                          },
+                          {
+                            featureType: 'road.highway.controlled_access',
+                            elementType: 'geometry.stroke',
+                            stylers: [{color: '#db8555'}]
+                          },
+                          {
+                            featureType: 'road.local',
+                            elementType: 'labels.text.fill',
+                            stylers: [{color: '#806b63'}]
+                          },
+                          {
+                            featureType: 'transit.line',
+                            elementType: 'geometry',
+                            stylers: [{color: '#dfd2ae'}]
+                          },
+                          {
+                            featureType: 'transit.line',
+                            elementType: 'labels.text.fill',
+                            stylers: [{color: '#8f7d77'}]
+                          },
+                          {
+                            featureType: 'transit.line',
+                            elementType: 'labels.text.stroke',
+                            stylers: [{color: '#ebe3cd'}]
+                          },
+                          {
+                            featureType: 'transit.station',
+                            elementType: 'geometry',
+                            stylers: [{color: '#dfd2ae'}]
+                          },
+                          {
+                            featureType: 'water',
+                            elementType: 'geometry.fill',
+                            stylers: [{color: '#242f3e2'}]
+                          },
+                          {
+                            featureType: 'water',
+                            elementType: 'labels.text.fill',
+                            stylers: [{color: '#92998d'}]
+                          }
+                        ],
+                        {name: 'Styled Map'});
+
+                            }
+                    
+                    
+                    function statisticChart3(){                                 //在右下角地图上添加ajax获取到的数据
+                         $.ajax({
+                                url:'http://120.79.75.202:9090/app/areaUserLocation',
+                                type:'GET',
+                                dataType:'jsonp',
+                                //jsonp:'callback',
+//                                jsonp:false,
+                                jsonpCallback:'callbackbadLocation',
+                                success:function(data3){
+                                    badPoints = [];
+                                    //heatmap.setMap(null);
+                                    //badPointsMVC.clear();
+                                    //heatmap = null;
+//                                        alert(data3.data[1].lng);
+                                        //map1.setCenter(new google.maps.LatLng(40.37,116.85));
+                                        for(var i=0;i<data3.data.length;i++){
+                                            badPoints.push(new google.maps.LatLng(data3.data[i].lat,data3.data[i].lng)); 
+                                        }   
+                                    
+                                    
+//                                    for(var i=0;i<data3.features.length;i++){
+//                                        if(data3.features[i].properties.mag>2.6){
+//                                            badPoints.push(new google.maps.LatLng(data3.features[i].geometry.coordinates[1],data3.features[i].geometry.coordinates[0]));
+//                                        }
+//                                    }
+                                 
+                                    
+//                                        heatmap = new google.maps.visualization.HeatmapLayer({
+//                                        data: badPoints,
+//                                        map: map1
+//                                        });
+//                                    heatmap.setData = badPoints;
+//                                        heatmap.setMap(map1);
+                                    
+                                       
+                                        var newdata = new google.maps.MVCArray(badPoints);          //注意，热像图需要使用MACArray更新，不然会卡顿
+                                        heatmap.set('data', newdata)
+                                },
+                             error:function(e){
+                                 alert(e.status+''+e.statusText+''+'chart3');
+                            }
+                    });
+                }
+                    
+//                        self.setInterval("statisticChart3()",5000);                                //实时更新
+//                    statisticChart3();
+
+                </script>
+            </div>
+        </div>
+    </body>
+</html>

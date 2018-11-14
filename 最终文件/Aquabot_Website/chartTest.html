@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Chart Test</title>
+        <link rel="stylesheet" type="text/css" href="css/style.css">
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+    </head>
+    
+    <body>
+        <!--用户基本信息模块part1-->
+        <div class="userData">
+            <h4 align = center><font size = "4">User Basic Information</font></h4>
+            <div id="userInfo">
+               <table class="userTable">
+                   <tr>
+                       <th>编号:</th>
+                       <td id="userCode">asd</td>
+                   </tr>
+                   <tr>
+                       <th>姓名:</th>
+                       <td id="userName">Mike</td>
+                   </tr>
+                   <tr>
+                       <th>地址:</th>
+                       <td id="userAddress">FrankFord 2209,apt112</td>
+                   </tr>
+                   <tr>
+                       <th>电话:</th>
+                       <td id="userPhone">9179154854</td>
+                   </tr>
+                </table>
+            </div>
+            
+            <!-- 画图-->
+            <div id="userChart">
+<!--                <canvas id="userChart1" ></canvas>-->
+                <div id="container" style="width: 380px; height: 265px; margin: 0 auto"></div>
+                <ul id="waterValue">
+                    <li>温度: <span id="tem"></span></li>
+                    <li>单位PPM：<span id="ppm"></span></li>
+                    <li>余氯：<span id="chlorine"></span></li>
+                    <li>PH值：<span id="ph"></span></li>
+                    <li>单位MV：<span id="mv"></span></li>
+                </ul>
+                <script src="http://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+                <script src="http://code.highcharts.com/highcharts.js"></script>
+<!--                <script src="Chart.js"></script>-->
+                    <script>
+//                        var ctx = document.getElementById("userChart1");
+//                        var myChart = new Chart(ctx, {
+//                            type: 'line',
+//                            data: {
+//                                labels: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday","Sunday"],
+//                                datasets: [{
+//                                    label: "Histogram",
+//                                    data: [3, 19, 3, 5, 2, 3],
+//                                    borderWidth: 1,
+//                                    pointHoverBackgroundColor: "black",
+//                                    borderColor:"blue",
+//                                    fill:false,
+//                                }]
+//                            },
+//                            options: {
+//                                scales: {
+//                                    xAxes: [{
+//                                        ticks: {
+//                                            beginAtZero:true,
+//                                            fontSize:8
+//                                        }
+//                                    }]
+//                                }
+//                            }
+//                        });
+                    userChart();
+                        var chart;
+                        function userChart(data) {
+
+                           chart =  Highcharts.chart('container', {
+                                chart: {
+                                    zoomType: 'x',
+                                    backgroundColor: 'rgba(0,0,0,0)'//用于去掉背景
+                                },
+                                credits:{
+                                  enabled:false  //c去除脚标
+                                },
+                                title: {
+                                    text: 'User Water Quality Chart'
+
+                                },
+                                subtitle: {
+                                    text: document.ontouchstart === undefined ?
+                                            'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in'
+                                },
+                                xAxis: {
+                                    type: 'datetime',
+                                    gridLineWidth:1
+                                },
+                                yAxis: {
+                                    title: {
+                                        text: 'User Water Quality'
+                                    },
+                                    gridLineDashStyle:'Dash',
+                                    labels:{
+                                        align:'center',
+                                        x:0,
+                                        y:-1
+                                    }
+                                },
+                                legend: {
+                                    enabled: false
+                                },
+                                plotOptions: {
+                                    area: {
+                                        fillColor: {
+                                            linearGradient: {
+                                                x1: 0,
+                                                y1: 0,
+                                                x2: 0,
+                                                y2: 1
+                                            },
+                                            stops: [
+                                                [0, Highcharts.getOptions().colors[0]],
+                                                [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                                            ]
+                                        },
+                                        marker: {
+                                            radius: 2
+                                        },
+                                        lineWidth: 1,
+                                        states: {
+                                            hover: {
+                                                lineWidth: 1
+                                            }
+                                        },
+                                        threshold: null
+                                    }
+                                },
+
+                                series: [{
+                                    type: 'area',
+                                    name: 'User Water Quality',
+                                    data: data
+                                }]
+
+                            });
+                        }
+                    </script>
+            </div>
+        </div>
+        
+        <!--地图模块part2-->
+        <div class="mapView">
+            <div id="mapBtn">
+                <button class="btnGood" onclick="showGoodMarker()">Good</button>
+                <button class="btnBad" onclick="showBadMarker()">Bad</button>
+                <script>
+                    //marker数组定义在下面的script标签中
+                     var countBadClick = 0;
+                     //显示不好的点
+                     function showBadMarker(){
+                         if(countBadClick == 0){
+                             countBadClick++;
+                            for(var i=0;i<markerCount.length;i++){
+                                if(markerCount[i].markerInfo>50){
+                                    markerCount[i].setMap(null);
+                                }
+                            }
+                         }else{
+                             countBadClick = 0;
+                             for(var i=0;i<markerCount.length;i++){
+                                if(markerCount[i].markerInfo>50){
+                                    markerCount[i].setMap(map);
+                                }
+                             }
+                         }
+                     }
+                    
+                     var countGoodClick = 0;
+                     //显示好的点
+                    function showGoodMarker(){
+                         if(countGoodClick == 0){
+                             countGoodClick++;
+                            for(var i=0;i<markerCount.length;i++){
+                                if(markerCount[i].markerInfo>100){
+                                    markerCount[i].setMap(null);
+                                }
+                            }
+                         }else{
+                             countGoodClick = 0;
+                             for(var i=0;i<markerCount.length;i++){
+                                if(markerCount[i].markerInfo>100){
+                                    markerCount[i].setMap(map);
+                                }
+                             }
+                         }
+                     }
+                    
+                    
+                </script>   
+            </div>
+            
+            <div id="mapChart">
+            <script>
+            var markerCount = [];
+            var map;
+            var map1,heatmap;
+            function initMap(){
+                map = new google.maps.Map(document.getElementById('mapChart'),{
+                    zoom:2,
+                    center:new google.maps.LatLng(2.8,-187.3),
+                    mapTypeId:'terrain'
+                });
+                
+                //加载第二个图表
+                map1 = new google.maps.Map(document.getElementById("statChart3"),{
+                    zoom:11,
+                    center:{lat:37.775, lng: -122.434},
+                    mapTypeControlOptions: {
+                        mapTypeIds: ['roadmap', 'satellite', 'hybrid', 'terrain',
+                    'styled_map']
+                    }
+                });
+                
+                
+                heatmap = new google.maps.visualization.HeatmapLayer({
+                            data: getPoints(),
+                            map: map1
+                });
+                
+                
+                    map1.mapTypes.set('styled_map',getStyle());
+                    map1.setMapTypeId('styled_map');
+                
+                 document.getElementsByTagName('head')[0].removeChild(document.getElementsByTagName('head')[0].childNodes[0]);
+                
+                        for(var i=0;i<markerCount.length;i++){
+                    markerCount[i].setMap(null)
+                }
+                 markerCount = [];//每次开始都清空markercount
+                
+                var script = document.createElement('script');
+                script.src =  'https://developers.google.com/maps/documentation/javascript/examples/json/earthquake_GeoJSONP.js';
+                document.getElementsByTagName('head')[0].appendChild(script);
+                
+            }
+            
+            window.eqfeed_callback = function(results){ 
+                for(var i=0;i<results.features.length;i++){
+                    var coords = results.features[i].geometry.coordinates;
+                    var latLng = new google.maps.LatLng(coords[1],coords[0]);
+                    icon = selectIcon(i,results);
+                    var chartInfo = [[1167609600000,0.7537+i *0.01],[1167696000000,0.7559+i *0.01],[1167955200000,0.7644+i *0.01],[1171238400000,0.7719+i*0.01],[1173744000000,0.7566+i*0.01]];
+                    var marker = new google.maps.Marker({
+                        position:latLng,
+                        map: map,
+                        icon:icon,
+                        markerInfo:i,
+                        chartInfo:chartInfo
+                    });
+                    markerCount.push(marker);//将marker添加进数组中，对于上面的按钮进行管理
+                    showInfoWindow(marker,i,results); //调用信息窗口函数
+                }
+            }
+            
+            
+            //根据需求选择不同的marker图表
+            function selectIcon(number,results){
+                var iconBase = 'https://maps.google.com/mapfiles/kml/shapes/';
+                if(results.features[number].properties.mag>2.7){
+                    return iconBase + 'parking_lot_maps.png';
+                }else{
+                    return;
+                }
+            }
+                
+            //显示信息窗口
+            function showInfoWindow(marker,number,results){
+                var message = results.features[number].id;
+                var infowindow = new google.maps.InfoWindow({
+                    content:message,
+                    size: new google.maps.Size(100,100)
+                });
+                
+                marker.addListener('mouseover',function(){
+                infowindow.open(map,marker);
+                });
+                
+                marker.addListener('mouseout',function(){
+                infowindow.close();
+                });
+                marker.addListener('click',function(){
+                    document.getElementById("userCode").innerHTML = marker.markerInfo;
+                    document.getElementById("userName").innerHTML = marker.markerInfo;
+                    document.getElementById("userAddress").innerHTML = marker.markerInfo;
+                    document.getElementById("userPhone").innerHTML = marker.markerInfo;
+                    
+                    //userChart(marker.chartInfo);
+                    chart.update({
+                        series: [{
+                                    type: 'area',
+                                    name: 'User Water Quality',
+                                    data: marker.chartInfo
+                                }]
+                    });
+                    
+                    document.getElementById("tem").innerHTML = marker.markerInfo;
+                    document.getElementById("ppm").innerHTML = marker.markerInfo;
+                    document.getElementById("chlorine").innerHTML = marker.markerInfo;
+                    document.getElementById("ph").innerHTML = marker.markerInfo;
+                    document.getElementById("mv").innerHTML = marker.markerInfo;
+                });
+            }
+             
+//                function getStyle(){
+//            return   new google.maps.StyledMapType(
+//            [
+//              {elementType: 'geometry', stylers: [{color: '#ebe3cd'}]},
+//              {elementType: 'labels.text.fill', stylers: [{color: '#523735'}]},
+//              {elementType: 'labels.text.stroke', stylers: [{color: '#f5f1e6'}]},
+//              {
+//                featureType: 'administrative',
+//                elementType: 'geometry.stroke',
+//                stylers: [{color: '#c9b2a6'}]
+//              },
+//              {
+//                featureType: 'administrative.land_parcel',
+//                elementType: 'geometry.stroke',
+//                stylers: [{color: '#dcd2be'}]
+//              },
+//              {
+//                featureType: 'administrative.land_parcel',
+//                elementType: 'labels.text.fill',
+//                stylers: [{color: '#ae9e90'}]
+//              },
+//              {
+//                featureType: 'landscape.natural',
+//                elementType: 'geometry',
+//                stylers: [{color: '#dfd2ae'}]
+//              },
+//              {
+//                featureType: 'poi',
+//                elementType: 'geometry',
+//                stylers: [{color: '#dfd2ae'}]
+//              },
+//              {
+//                featureType: 'poi',
+//                elementType: 'labels.text.fill',
+//                stylers: [{color: '#93817c'}]
+//              },
+//              {
+//                featureType: 'poi.park',
+//                elementType: 'geometry.fill',
+//                stylers: [{color: '#a5b076'}]
+//              },
+//              {
+//                featureType: 'poi.park',
+//                elementType: 'labels.text.fill',
+//                stylers: [{color: '#447530'}]
+//              },
+//              {
+//                featureType: 'road',
+//                elementType: 'geometry',
+//                stylers: [{color: '#f5f1e6'}]
+//              },
+//              {
+//                featureType: 'road.arterial',
+//                elementType: 'geometry',
+//                stylers: [{color: '#fdfcf8'}]
+//              },
+//              {
+//                featureType: 'road.highway',
+//                elementType: 'geometry',
+//                stylers: [{color: '#f8c967'}]
+//              },
+//              {
+//                featureType: 'road.highway',
+//                elementType: 'geometry.stroke',
+//                stylers: [{color: '#e9bc62'}]
+//              },
+//              {
+//                featureType: 'road.highway.controlled_access',
+//                elementType: 'geometry',
+//                stylers: [{color: '#e98d58'}]
+//              },
+//              {
+//                featureType: 'road.highway.controlled_access',
+//                elementType: 'geometry.stroke',
+//                stylers: [{color: '#db8555'}]
+//              },
+//              {
+//                featureType: 'road.local',
+//                elementType: 'labels.text.fill',
+//                stylers: [{color: '#806b63'}]
+//              },
+//              {
+//                featureType: 'transit.line',
+//                elementType: 'geometry',
+//                stylers: [{color: '#dfd2ae'}]
+//              },
+//              {
+//                featureType: 'transit.line',
+//                elementType: 'labels.text.fill',
+//                stylers: [{color: '#8f7d77'}]
+//              },
+//              {
+//                featureType: 'transit.line',
+//                elementType: 'labels.text.stroke',
+//                stylers: [{color: '#ebe3cd'}]
+//              },
+//              {
+//                featureType: 'transit.station',
+//                elementType: 'geometry',
+//                stylers: [{color: '#dfd2ae'}]
+//              },
+//              {
+//                featureType: 'water',
+//                elementType: 'geometry.fill',
+//                stylers: [{color: '#b9d3c2'}]
+//              },
+//              {
+//                featureType: 'water',
+//                elementType: 'labels.text.fill',
+//                stylers: [{color: '#92998d'}]
+//              }
+//            ],
+//            {name: 'Styled Map'});
+//                
+//                }
+                
+                                
+//                    map1.mapTypes.set('styled_map',styledMapType);//styledMapType
+//                    map1.setMapTypeId('styled_map');
+//                        
+//                    heatmap = new google.maps.visualization.HeatmapLayer({
+//                            data: getPoints(),
+//                            map: map1
+//                        });
+                
+//                 function toggleHeatmap() {
+//        heatmap.setMap(heatmap.getMap() ? null : map);
+//      }
+
+//      function changeGradient() {
+//        var gradient = [
+//          'rgba(0, 255, 255, 0)',
+//          'rgba(0, 255, 255, 1)',
+//          'rgba(0, 191, 255, 1)',
+//          'rgba(0, 127, 255, 1)',
+//          'rgba(0, 63, 255, 1)',
+//          'rgba(0, 0, 255, 1)',
+//          'rgba(0, 0, 223, 1)',
+//          'rgba(0, 0, 191, 1)',
+//          'rgba(0, 0, 159, 1)',
+//          'rgba(0, 0, 127, 1)',
+//          'rgba(63, 0, 91, 1)',
+//          'rgba(127, 0, 63, 1)',
+//          'rgba(191, 0, 31, 1)',
+//          'rgba(255, 0, 0, 1)'
+//        ]
+//        heatmap.set('gradient', heatmap.get('gradient') ? null : gradient);
+//      }
+//
+//      function changeRadius() {
+//        heatmap.set('radius', heatmap.get('radius') ? null : 20);
+//      }
+//
+//      function changeOpacity() {
+//        heatmap.set('opacity', heatmap.get('opacity') ? null : 0.2);
+//      }
+
+                
+                    function getPoints() {
+                                return [
+                                  new google.maps.LatLng(37.782551, -122.445368),
+                                  new google.maps.LatLng(37.782745, -122.444586),
+                                  new google.maps.LatLng(37.782842, -122.443688),
+                                  new google.maps.LatLng(37.782919, -122.442815),
+                                  new google.maps.LatLng(37.782992, -122.442112),
+                                  new google.maps.LatLng(37.783100, -122.441461),
+                                  new google.maps.LatLng(37.783206, -122.440829),
+                                  new google.maps.LatLng(37.783273, -122.440324),
+                                  new google.maps.LatLng(37.783316, -122.440023),
+                                  new google.maps.LatLng(37.783357, -122.439794),
+                                  new google.maps.LatLng(37.783371, -122.439687),
+                                  new google.maps.LatLng(37.783368, -122.439666),
+                                  new google.maps.LatLng(37.783383, -122.439594),
+                                  new google.maps.LatLng(37.783508, -122.439525),
+                                  new google.maps.LatLng(37.783842, -122.439591),
+                                  new google.maps.LatLng(37.784147, -122.439668),
+                                  new google.maps.LatLng(37.784206, -122.439686),
+                                  new google.maps.LatLng(37.784386, -122.439790),
+                                  new google.maps.LatLng(37.784701, -122.439902),
+                                new google.maps.LatLng(37.751266, -122.403355)
+                            ];
+                         }  
+            //self.setInterval("initMap()",2000);  
+                
+
+            </script>
+                 <script async defer
+                    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBlpSzqx999357qCKZ2ne9bMORF6T9BgiI&libraries=visualization&callback=initMap">
+                </script>
+            </div>
+            
+            
+            <div id="mapList">
+                <button onclick="count()">bad list</button>
+                <a>Total number:<span id="totalNum"></span></a>
+                <table id="table_area" border="1"></table>
+                
+                <srcipt src ="http://code.jquery.com/jquery-1.4.1.min.js"></srcipt>
+                
+                <script>
+                    var countTimes = 0;//记录button点击次数
+                    var info = new Array(); //全局变量，必须放在外面
+                    var badlist = function(){
+                        var numberCount = 1;
+                        $.ajax({
+                            url:'https://developers.google.com/maps/documentation/javascript/examples/json/earthquake_GeoJSONP.js',
+                            type:'GET',
+                            dataType:'jsonp',
+                            jsonp:'callback',
+                            jsonpCallback:'eqfeed_callback',
+                            success:function(data){
+//                                var a = 0;
+//                                var b= 0;
+                                info.push({number:"number",name:"name",address:"address", code:"code"});
+                                for(var i=0;i<data.features.length;i++){
+                                    if(data.features[i].properties.mag>2.7){
+                                        var userName = data.features[i].properties.place;
+                                        var userAddress = data.features[i].properties.time;
+                                        var userCode = data.features[i].properties.tz;
+                                        //var user = new personInfo(userName,userAddress,userCode);
+                                        var user = {number:numberCount,name:userName,address:userAddress, code:userCode};
+                                        info.push(user);
+                                        numberCount++;
+                                    }
+//                                    if(data.features[i].properties.mag>2.7){
+//                                            a++;
+//                                        }else{
+//                                            b++;
+//                                        }
+                                }
+//                                versus([a,b]);
+                                document.getElementById("totalNum").innerHTML = numberCount; //显示badlist总数
+                                display_table();
+                            },
+                            error:function(e){
+                                alert(e.status+''+e.statusText);
+                            }
+                        });
+                    }
+                    
+                    function create_tr_e(a){
+                        var tr_e = document.createElement("tr");
+                        var  td_e = document.createElement("td"); td_e.appendChild(document.createTextNode(a["number"])); tr_e.appendChild(td_e);
+                        td_e = document.createElement("td"); td_e.appendChild(document.createTextNode(a["name"])); tr_e.appendChild(td_e);
+                        td_e = document.createElement("td"); td_e.appendChild(document.createTextNode(a["address"])); tr_e.appendChild(td_e);
+                        td_e = document.createElement("td"); td_e.appendChild(document.createTextNode(a["code"])); tr_e.appendChild(td_e);
+                        return tr_e;
+                    }
+                    
+                    function display_table(){
+                        var table_e = document.getElementById("table_area");
+                        var temp_table = document.createElement("table");
+                        for(var i = 0;i<info.length;i++){
+                            //temp_table.appendChild(create_tr_e(info[i]));
+                            table_e.appendChild(create_tr_e(info[i]));
+                        }
+                        //table_e.parentNode.replaceChild(temp_table, table_e);//trick
+                    }
+                    
+                    function count(){
+                        if(countTimes == 0){
+                            countTimes++;
+                            badlist();
+                        }else{
+                            countTimes = 0;
+                                var list = document.getElementById("table_area");
+                                while(list.hasChildNodes()){
+                                    list.removeChild(list.firstChild);
+                                }
+                        }
+                        document.getElementById("totalNum").innerHTML = null;
+                    }
+                </script>
+            </div>
+            
+        </div>
+        
+        <!--统计数据模块part3-->
+        <div class="statData">
+            <h6 align = center><font size = "2"> Statistic Data</font></h6>
+            <div id="statChart1">
+                <canvas id="statChart11" ></canvas>
+                <script src="Chart.js"></script>
+                    <script>
+                        var myChart;
+                        function versus(){
+                             var ctx = document.getElementById("statChart11");
+                             myChart = new Chart(ctx, {
+                                type: 'pie',
+                                data: {
+                                    labels: ["Good", "Bad"],
+                                    datasets: [{
+                                        data: [100,10],
+                                        borderColor:"blue",
+                                        //hoverBackgroundColor:"red",
+                                        backgroundColor:["green","red"],
+                                        borderWidth:1,
+
+                                    }]
+                                },
+                                options: {
+                                    layout:{
+                                        padding:{
+                                            top:0,
+                                            bottom:60,
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        versus();
+//                          myChart.data.datesets.data = [20,20];
+//                                        myChart.update();
+                        function versusChart(){
+                            $.ajax({
+                                url:'https://developers.google.com/maps/documentation/javascript/examples/json/earthquake_GeoJSONP.js',
+                                type:'GET',
+                                dataType:'jsonp',
+                                jsonp:'callback',
+                                jsonpCallback:'eqfeed_callback',
+                                success:function(data2){
+                                    var goodCount =0;
+                                    var badCount = 0;
+                                    for(var i=0;i<data2.features.length;i++){
+                                        if(data2.features[i].properties.mag>2.9){
+                                            goodCount++;
+                                        }else{
+                                            badCount++;
+                                        }
+                                    }
+                                        myChart.data.datasets[0].data = [i,i+1];
+                                        myChart.update();
+                                    //var dataVersus = [goodCount,badCount];
+                                    //versus();
+                                },
+                                error:function(e){
+                                    alert(e.status+''+e.statusText);
+                                   
+                                }
+                            });
+                        }
+                       versusChart();
+                       // setInterval("versusChart()",1000);
+                    </script>
+            </div>
+            
+            <div id="statChart2">
+<!--
+                <canvas id="statChart22"></canvas>
+                    <script src="Chart.js"></script>
+-->
+<!--                <div id="container2" style="width: 380px; height: 265px; margin: 0 auto"></div>-->
+                    <script>
+//                        var ctx = document.getElementById("statChart22");
+//                        var myChart = new Chart(ctx, {
+//                            type: 'line',
+//                            data: {
+//                                labels: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday","Sunday"],
+//                                datasets: [{
+//                                    label: "Histogram",
+//                                    data: [12, 19, 3, 5, 2, 3],
+//                                    fill:false,
+//                                }]
+//                            },
+//                            options: {
+//                                scales: {
+//                                    xAxes: [{
+//                                        ticks: {
+//                                            beginAtZero:true,
+//                                            fontSize:8
+//                                        }
+//                                    }]
+//                                },
+//                                layout:{
+//                                    padding:{
+//                                        top:15,
+//                                        bottom:20,
+//                                        left:20,
+//                                        right:30,
+//                                    }
+//                                }
+//                            }
+//                        });
+                        
+                        function statisticChart2(data) {
+                            Highcharts.chart('statChart2', {
+                                chart: {
+                                    zoomType: 'x',
+                                    backgroundColor: 'rgba(0,0,0,0)'//用于去掉背景
+                                },
+                                credits:{
+                                  enabled:false  //c去除脚标
+                                },
+                                title: {
+                                    text: 'Seasonal Statistic Data'
+
+                                },
+//                                subtitle: {
+//                                    text: document.ontouchstart === undefined ?
+//                                            'Click and drag in the plot area to zoom in' : 'Pinch the chart to zoom in'
+//                                },
+                                xAxis: {
+                                    type: 'datetime',
+                                    gridLineWidth:1
+                                },
+                                yAxis: {
+                                    title: {
+                                        text: 'Water Quality'
+                                    },
+                                    gridLineDashStyle:'Dash',
+                                    labels:{
+                                        align:'center',
+                                        x:0,
+                                        y:-1
+                                    }
+                                },
+                                legend: {
+                                    enabled: false
+                                },
+                                plotOptions: {
+                                    area: {
+                                        fillColor: {
+                                            linearGradient: {
+                                                x1: 0,
+                                                y1: 0,
+                                                x2: 0,
+                                                y2: 1
+                                            },
+                                            stops: [
+                                                [0, Highcharts.getOptions().colors[0]],
+                                                [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                                            ]
+                                        },
+                                        marker: {
+                                            radius: 2
+                                        },
+                                        lineWidth: 1,
+                                        states: {
+                                            hover: {
+                                                lineWidth: 1
+                                            }
+                                        },
+                                        threshold: null
+                                    }
+                                },
+
+                                series: [{
+                                    type: 'area',
+                                    name: 'User Water Quality',
+                                    data: data
+                                }]
+
+                            });
+                        }
+                        statisticChart2();
+                        
+                        function seasonalChart(){
+                                $.ajax({
+                                url:'https://developers.google.com/maps/documentation/javascript/examples/json/earthquake_GeoJSONP.js',
+                                type:'GET',
+                                dataType:'jsonp',
+                                jsonp:'callback',
+                                jsonpCallback:'eqfeed_callback',
+                                success:function(data1){
+//                                    for(var i=0;i<data1.features.length;i++){
+//                                        
+//                                    }
+                                    var Info = [[1167609600000,0.7537+1 *0.01],[1167696000000,0.7559+2 *0.01],[1167955200000,0.7644+3 *0.01],[1171238400000,0.7719+4*0.01],[1173744000000,0.7566+5*0.01]];
+                                    statisticChart2(Info);
+                                }, 
+                                error:function(e){
+                                    alert(e.status+''+e.statusText);
+                                }
+                            });
+                        }
+                        seasonalChart();
+//                        setInterval()
+                    </script>
+            </div>
+            
+            <div id="statChart3">
+                <script>
+                    //var map1,heatmap;
+//                    var dataForMap = [];
+                    
+//                    function initMap1(){
+
+//                    function styleType(){
+//            return new google.maps.StyledMapType(
+//            [
+//              {elementType: 'geometry', stylers: [{color: '#ebe3cd'}]},
+//              {elementType: 'labels.text.fill', stylers: [{color: '#523735'}]},
+//              {elementType: 'labels.text.stroke', stylers: [{color: '#f5f1e6'}]},
+//              {
+//                featureType: 'administrative',
+//                elementType: 'geometry.stroke',
+//                stylers: [{color: '#c9b2a6'}]
+//              },
+//              {
+//                featureType: 'administrative.land_parcel',
+//                elementType: 'geometry.stroke',
+//                stylers: [{color: '#dcd2be'}]
+//              },
+//              {
+//                featureType: 'administrative.land_parcel',
+//                elementType: 'labels.text.fill',
+//                stylers: [{color: '#ae9e90'}]
+//              },
+//              {
+//                featureType: 'landscape.natural',
+//                elementType: 'geometry',
+//                stylers: [{color: '#dfd2ae'}]
+//              },
+//              {
+//                featureType: 'poi',
+//                elementType: 'geometry',
+//                stylers: [{color: '#dfd2ae'}]
+//              },
+//              {
+//                featureType: 'poi',
+//                elementType: 'labels.text.fill',
+//                stylers: [{color: '#93817c'}]
+//              },
+//              {
+//                featureType: 'poi.park',
+//                elementType: 'geometry.fill',
+//                stylers: [{color: '#a5b076'}]
+//              },
+//              {
+//                featureType: 'poi.park',
+//                elementType: 'labels.text.fill',
+//                stylers: [{color: '#447530'}]
+//              },
+//              {
+//                featureType: 'road',
+//                elementType: 'geometry',
+//                stylers: [{color: '#f5f1e6'}]
+//              },
+//              {
+//                featureType: 'road.arterial',
+//                elementType: 'geometry',
+//                stylers: [{color: '#fdfcf8'}]
+//              },
+//              {
+//                featureType: 'road.highway',
+//                elementType: 'geometry',
+//                stylers: [{color: '#f8c967'}]
+//              },
+//              {
+//                featureType: 'road.highway',
+//                elementType: 'geometry.stroke',
+//                stylers: [{color: '#e9bc62'}]
+//              },
+//              {
+//                featureType: 'road.highway.controlled_access',
+//                elementType: 'geometry',
+//                stylers: [{color: '#e98d58'}]
+//              },
+//              {
+//                featureType: 'road.highway.controlled_access',
+//                elementType: 'geometry.stroke',
+//                stylers: [{color: '#db8555'}]
+//              },
+//              {
+//                featureType: 'road.local',
+//                elementType: 'labels.text.fill',
+//                stylers: [{color: '#806b63'}]
+//              },
+//              {
+//                featureType: 'transit.line',
+//                elementType: 'geometry',
+//                stylers: [{color: '#dfd2ae'}]
+//              },
+//              {
+//                featureType: 'transit.line',
+//                elementType: 'labels.text.fill',
+//                stylers: [{color: '#8f7d77'}]
+//              },
+//              {
+//                featureType: 'transit.line',
+//                elementType: 'labels.text.stroke',
+//                stylers: [{color: '#ebe3cd'}]
+//              },
+//              {
+//                featureType: 'transit.station',
+//                elementType: 'geometry',
+//                stylers: [{color: '#dfd2ae'}]
+//              },
+//              {
+//                featureType: 'water',
+//                elementType: 'geometry.fill',
+//                stylers: [{color: '#b9d3c2'}]
+//              },
+//              {
+//                featureType: 'water',
+//                elementType: 'labels.text.fill',
+//                stylers: [{color: '#92998d'}]
+//              }
+//            ],
+//            {name: 'Styled Map'});
+//                       
+//                    }
+
+//                        
+//                        map1 = new google.maps.Map(document.getElementById("statChart3"),{
+//                            center:{lat:37.775, lng: -122.434},
+//                            zoom:11,
+//                            mapTypeControlOptions: {
+//                                mapTypeIds: ['roadmap', 'satellite', 'hybrid', 'terrain','styled_map']
+//                            }
+//                        });
+//                        
+//                        map1.mapTypes.set('styled_map', styledMapType);
+//                        map1.setMapTypeId('styled_map');
+//                        
+//                        heatmap = new google.maps.visualization.HeatmapLayer({
+//                            data: getPoints(),
+////                            data:dataForMap,
+//                            map: map1
+//                        });
+                        
+
+                        
+//                         function getPoints() {
+//                                return [
+//                                  new google.maps.LatLng(37.782551, -122.445368),
+//                                  new google.maps.LatLng(37.782745, -122.444586),
+//                                  new google.maps.LatLng(37.782842, -122.443688),
+//                                  new google.maps.LatLng(37.782919, -122.442815),
+//                                  new google.maps.LatLng(37.782992, -122.442112),
+//                                  new google.maps.LatLng(37.783100, -122.441461),
+//                                  new google.maps.LatLng(37.783206, -122.440829),
+//                                  new google.maps.LatLng(37.783273, -122.440324),
+//                                  new google.maps.LatLng(37.783316, -122.440023),
+//                                  new google.maps.LatLng(37.783357, -122.439794),
+//                                  new google.maps.LatLng(37.783371, -122.439687),
+//                                  new google.maps.LatLng(37.783368, -122.439666),
+//                                  new google.maps.LatLng(37.783383, -122.439594),
+//                                  new google.maps.LatLng(37.783508, -122.439525),
+//                                  new google.maps.LatLng(37.783842, -122.439591),
+//                                  new google.maps.LatLng(37.784147, -122.439668),
+//                                  new google.maps.LatLng(37.784206, -122.439686),
+//                                  new google.maps.LatLng(37.784386, -122.439790),
+//                                  new google.maps.LatLng(37.784701, -122.439902),
+//                                new google.maps.LatLng(37.751266, -122.403355)
+//                            ];
+//                         }        
+//                    }
+                    
+                    
+//                    function getData(){
+//                        $.ajax({
+//                                url:'https://developers.google.com/maps/documentation/javascript/examples/json/earthquake_GeoJSONP.js',
+//                                type:'GET',
+//                                dataType:'jsonp',
+//                                jsonp:'callback',
+//                                jsonpCallback:'eqfeed_callback',
+//                                success:function(data3){ 
+//                                    for(var i=0;i<data3.features.length;i++ ){
+//                                         var coords3 = data3.features[i].geometry.coordinates;
+//                                        var latLng = new google.maps.LatLng(coords3[1],coords3[0]);
+//                                        dataForMap.push(latLng);
+//                                    }
+//                                    initMap1(dataForMap);
+//                                },
+//                                error:function(e){
+//                                    alert(e.status+''+e.statusText);
+//                                }
+//                        });
+//                    }
+                    
+                                    function getStyle(){
+            return   new google.maps.StyledMapType(
+            [
+              {elementType: 'geometry', stylers: [{color: '#ebe3cd'}]},
+              {elementType: 'labels.text.fill', stylers: [{color: '#523735'}]},
+              {elementType: 'labels.text.stroke', stylers: [{color: '#f5f1e6'}]},
+              {
+                featureType: 'administrative',
+                elementType: 'geometry.stroke',
+                stylers: [{color: '#c9b2a6'}]
+              },
+              {
+                featureType: 'administrative.land_parcel',
+                elementType: 'geometry.stroke',
+                stylers: [{color: '#dcd2be'}]
+              },
+              {
+                featureType: 'administrative.land_parcel',
+                elementType: 'labels.text.fill',
+                stylers: [{color: '#ae9e90'}]
+              },
+              {
+                featureType: 'landscape.natural',
+                elementType: 'geometry',
+                stylers: [{color: '#dfd2ae'}]
+              },
+              {
+                featureType: 'poi',
+                elementType: 'geometry',
+                stylers: [{color: '#dfd2ae'}]
+              },
+              {
+                featureType: 'poi',
+                elementType: 'labels.text.fill',
+                stylers: [{color: '#93817c'}]
+              },
+              {
+                featureType: 'poi.park',
+                elementType: 'geometry.fill',
+                stylers: [{color: '#a5b076'}]
+              },
+              {
+                featureType: 'poi.park',
+                elementType: 'labels.text.fill',
+                stylers: [{color: '#447530'}]
+              },
+              {
+                featureType: 'road',
+                elementType: 'geometry',
+                stylers: [{color: '#f5f1e6'}]
+              },
+              {
+                featureType: 'road.arterial',
+                elementType: 'geometry',
+                stylers: [{color: '#fdfcf8'}]
+              },
+              {
+                featureType: 'road.highway',
+                elementType: 'geometry',
+                stylers: [{color: '#f8c967'}]
+              },
+              {
+                featureType: 'road.highway',
+                elementType: 'geometry.stroke',
+                stylers: [{color: '#e9bc62'}]
+              },
+              {
+                featureType: 'road.highway.controlled_access',
+                elementType: 'geometry',
+                stylers: [{color: '#e98d58'}]
+              },
+              {
+                featureType: 'road.highway.controlled_access',
+                elementType: 'geometry.stroke',
+                stylers: [{color: '#db8555'}]
+              },
+              {
+                featureType: 'road.local',
+                elementType: 'labels.text.fill',
+                stylers: [{color: '#806b63'}]
+              },
+              {
+                featureType: 'transit.line',
+                elementType: 'geometry',
+                stylers: [{color: '#dfd2ae'}]
+              },
+              {
+                featureType: 'transit.line',
+                elementType: 'labels.text.fill',
+                stylers: [{color: '#8f7d77'}]
+              },
+              {
+                featureType: 'transit.line',
+                elementType: 'labels.text.stroke',
+                stylers: [{color: '#ebe3cd'}]
+              },
+              {
+                featureType: 'transit.station',
+                elementType: 'geometry',
+                stylers: [{color: '#dfd2ae'}]
+              },
+              {
+                featureType: 'water',
+                elementType: 'geometry.fill',
+                stylers: [{color: '#b9d3c2'}]
+              },
+              {
+                featureType: 'water',
+                elementType: 'labels.text.fill',
+                stylers: [{color: '#92998d'}]
+              }
+            ],
+            {name: 'Styled Map'});
+                
+                }
+                </script>
+<!--
+                <script defer async
+                src="https://maps.googleapis.com/maps/api/js?key=AIzaSyACVw4a58HUgqG8H8Sf6B3pEH5BOSDIvGs&libraries=visualization&callback=initMap1">
+                </script>
+-->
+                
+            </div>
+        </div>
+    </body>
+</html>

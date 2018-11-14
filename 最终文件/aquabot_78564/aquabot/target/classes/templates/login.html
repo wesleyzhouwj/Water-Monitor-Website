@@ -1,0 +1,44 @@
+<html>
+    <head>
+        <script src="https://code.jquery.com/jquery-3.0.0.min.js"></script>
+    </head>
+    <body>
+        <h1>
+            hello
+        </h1>
+        <script>
+            $.ajax({
+               url:"http://localhost:9090/admin/water_quality/waterlist2",
+                 type:'POST',
+                 data:{"mac":"dfefdfe-gegdf-cecx1"},
+               //  dataType:'jsonp',
+                jsonpCallback:'callback',
+               dataType:"jsonp",
+
+                success:function(getMapData){
+                    alert(getMapData.name[0].mac);
+                    
+                  
+                    
+                },
+                error:function(e){
+                    alert(e.status+''+e.statusText+''+'fullmap');
+                }
+            });
+            
+//                        $.ajax({
+//               url:"http://localhost:9090/admin/water_quality/waterlist",
+//                 type:'POST',
+//                data:{mac:"1"},
+//                 dataType:'json',
+////                dataType:"text",
+//                success:function(data){
+//                    alert(data);
+//                },
+//                error:function(e){
+//                    alert(e.status+''+e.statusText+''+'fullmap');
+//                }
+//            });
+        </script>
+    </body>
+</html>

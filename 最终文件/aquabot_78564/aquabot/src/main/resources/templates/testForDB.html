@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"></meta>
+<title>Insert title here</title>
+<script src="https://code.jquery.com/jquery-3.0.0.min.js"></script>
+<script type="text/javascript">
+
+
+	function fn1(){
+		//get异步访问
+		$.get(
+			"/WEB22/ajaxServlet2", //url地址
+			{"name":"张三","age":25}, //请求参数
+			function(data){ //执行成功后的回调函数
+				//{\"name\":\"tom\",\"age\":21}
+				alert(data.name);
+			},
+			"json"
+		);
+	}
+	function fn2(){
+		//post异步访问
+		$.post(
+			"/WEB22/ajaxServlet2", //url地址
+			{"name":"李四","age":25}, //请求参数
+			function(data){ //执行成功后的回调函数
+				alert(data.name);
+			},
+			"json"
+		);
+	}
+	function fn3(){
+		$.ajax({
+			url:"/admin/water_quality/helloworld",
+			async:true,
+			type:"GET",
+			data:{"name":"lucy","age":18},
+			success:function(data){
+				alert(data.name);
+			},
+			error:function(){
+				alert("请求失败");
+			},
+			dataType:"json"
+		});
+	}
+	
+	function refurb(){
+		$.ajax({
+			type:"get",
+			url:"/admin/water_quality/helloworld",
+		data:{},
+		async:false;
+		success:function(data){
+			alert(data);
+		}
+			
+			
+		});
+		
+	}
+	
+	function reajx2(){
+		$.ajax({
+		    url:'http://localhost:9090/admin/water_quality/helloworld',
+		    data:JSON.stringify({}),
+		    type:'post',
+		    dataType:'json',
+		    contentType: "application/json",
+		    success:function(data){
+		        alert("success");
+		        console.log(data);
+		 
+		    },
+		    error:function(reason){
+		       console.log(reason)
+		    }
+		});
+	}
+</script>
+
+</head>
+<body>
+	<input type="button" value="get访问服务器端" onclick="fn1()"></input><span id="span1"></span>
+	
+	<input type="button" value="post访问服务器端" onclick="reajx2()"></input><span id="span2"></span>
+	
+	<input type="button" value="ajax访问服务器端" onclick="fn3()"></input><span id="span2"></span>
+	
+</body>
+</html>

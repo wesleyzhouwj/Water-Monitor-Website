@@ -1,0 +1,5 @@
+1. cmd（管理员运行）-》net start MySQLwesley (开启数据库)， net stop MySQLwesley（关闭数据库）
+2. 打开navicat， 开启aquabott数据库
+3. 打开intellij idea-》打开aquabot_78564文件，application右键run
+4. 打开bracket -》new.html 文件是最终版本
+5.运行new.html等待5s可以看到标点在地图上显示
